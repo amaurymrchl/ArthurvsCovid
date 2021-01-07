@@ -1,0 +1,210 @@
+import pygame
+# Créer une seconde classe qui va représenter notre jeu
+class Game:
+    def __init__(self):
+        self.all_players = pygame.sprite.Group()
+        self.player = Player(self)
+        self.all_players.add(self.player)
+        self.all_monsters = pygame.sprite.Group()
+        self.pressed = {}
+        self.spawn_monster()
+
+    def check_collision(self, sprite, group):
+        return pygame.sprite.spritecollide(sprite, group, False, pygame.sprite.collide_mask)
+
+    def spawn_monster(self):
+        monster = Monster(self)
+        self.all_monsters.add(monster)
+
+from projectile import Projectile
+pygame.init()
+#Créer une  première classe qui va représenter le joueur
+
+class Player(pygame.sprite.Sprite):
+    def __init__(self, game):
+        super().__init__()
+        self.game = game
+        self.health = 100
+        self.max_health = 100
+        self.attack = 10
+        self.velocity = 2
+        self.all_projectiles = pygame.sprite.Group()
+        # load = permet de charger une image en apostrophe
+        self.image = pygame.image.load('assets/player.png')
+        #rect en python = forme à quatre côtés (image) -> il faut le récupérer dans un attribut
+        self.rect = self.image.get_rect()
+        self.rect.x = 500
+        self.rect.y = 500
+
+    # créer une nouvelle instance de la classe projectil
+    def launch_projectile(self):
+        self.all_projectiles.add(Projectile(self))
+        #donner un objet dans un argument -> parenthèse self
+
+
+    def move_right(self):
+        #si le joueur n'est pas en collision avec un monstre
+        if not self.game.check_collision(self, self.game.all_monsters):
+            self.rect.x += self.velocity
+
+    def move_left(self):
+        self.rect.x -= self.velocity
+
+#créer une classe qui va gérer la notion de monstre
+
+class Monster(pygame.sprite.Sprite):
+    #définir le constructeur
+    def __init__(self, game):
+        super().__init__()
+        self.game = game
+        self.health = 100
+        self.max_health = 100
+        self.attack = 5
+        self.image = pygame.image.load('assets/mummy.png')
+        self.image = pygame.transform.scale(self.image, (120, 120))
+        self.rect = self.image.get_rect()
+        self.rect.x = 1000
+        self.rect.y = 557
+        self.velocity = 0.0000000000003
+
+        def update_health_bar(self):
+            #définir une couleur pour notre jauge de vie
+            bar_color = (115, 241, 42 )
+
+        # définir la position de la bar
+        
+
+    def forward(self):
+        #Le déplacement ne se fait pas avec un joueur
+        if not self.game.check_collision(self, self.game.all_players):
+            self.rect.x -= self.velocity
+
+
+import pygame
+
+#Sprite qui va représenter notre projectile (héritage entre parenthèse -> class enfant qui possède les caractéristiques de pygame
+
+# définir le constructeur de l'image
+class Projectile(pygame.sprite.Sprite):
+    def __init__(self, player):
+        super().__init__()
+        self.velocity = 1
+        self.player = player
+        self.image = pygame.image.load('assets/projectile.png')
+        self.image = pygame.transform.scale(self.image, (50,50))
+        self.rect = self.image.get_rect()
+        self.rect.x = player.rect.x + 55
+        self.rect.y = player.rect.y + 100
+        self.origine_image = self.image
+        self.angle = 0
+
+    def rotate(self):
+        self.angle -= 1
+        self.image = pygame.transform.rotozoom(self.origine_image, self.angle, 1)
+        self.rect = self.image.get_rect(center = self.rect.center)
+
+    def remove(self):
+        self.player.all_projectiles.remove(self)
+
+    def move(self):
+        self.rect.x += self.velocity
+        self.rotate()
+
+        if self.player.game.check_collision(self, self.player.game.all_monsters):
+            #supprimer le projectile
+            self.remove()
+
+    #vérifier si le projectile rentre en collision avec un monstre
+
+        #condition pour vérifier si le projectile n'est plus présent sur l'éran
+        if self.rect.x > 1080:
+            self.remove() #on appelle la fonction remove
+            print("projectile supprimé")
+
+# initialiser ce qu'il y a à l'intérieur
+pygame.init()
+#générer la fenêtre
+pygame.display.set_caption("Covid Fall vs Schwartzur")
+screen = pygame.display.set_mode((1080,720))
+
+#charger notrer jeu
+game = Game()
+
+# importer l'arrière plan
+background = pygame.image.load('assets/bg.jpg')
+
+#charger notre jeu avec une nouvelle instance Game
+game = Game()
+# charger notre joueur
+
+
+
+#maintenir éveillée la fenêtre
+running = True
+
+#boucle qui va s'exécuter tant que running est vraie
+#si le joueur ferme la fenêtre
+while running:
+
+    #Appliquer l'arrière plan du jeu (blit = injecter une image à un endroit spécifique de la fenêtre)...
+    # ps : jouer avec les valeurs de background permet d'ajuster l'image
+    screen.blit(background, (0,-180))
+
+    #récupérer les projectiles du joueur
+    for projectile in game.player.all_projectiles:
+        projectile.move()
+
+    #récupérer les monstres de notre jeu
+    for monster in game.all_monsters:
+        monster.forward()
+
+    #Appliquer l'image de notre joueur (plusieurs attributs dans  blit)
+    screen.blit(game.player.image, game.player.rect)
+
+    #récupérer les projectiles du joueur (appliquer l'ensemble des images de mon groupe
+    #appliquer l'ensemble des images de mon groupe de projectiles
+    game.player.all_projectiles.draw(screen) #permet de dessiner tous les projectiles présents sur ce groupe
+
+    #appliquer l'ensemble des images de mon groupe de monstres
+    game.all_monsters.draw(screen)
+
+    #vérifier si le joueur souhaite aller à gauche ou à droite
+    if game.pressed.get(pygame.K_RIGHT) and game.player.rect.x + game.player.rect.width < screen.get_width():
+       game.player.move_right()
+    elif game.pressed.get(pygame.K_LEFT) and game.player.rect.x > -5:
+       game.player.move_left()
+
+    print(game.player.rect.x)
+
+#mettre à jour la fenêtre avec flip
+    pygame.display.flip()
+    for event in pygame.event.get():
+       if event.type == pygame.QUIT:
+           running = False
+           pygame.quit()
+           print("Fermeture du jeu")
+
+         # vérifier si le joueur souhaite aller à gauche ou à droite
+       elif event.type == pygame.KEYDOWN: #cas où la touche est utilisée
+           game.pressed[event.key] = True
+
+           #Détecter si la touche espace est enclenchée pour lancer notre projectile -> à chaque fois qu'on appuie sur la
+           #barre d'espace, ça générera un projectile (il faut afficher l'image du projectile à présent)
+           if event.key == pygame.K_SPACE:
+               game.player.launch_projectile()
+
+       elif event.type == pygame.KEYUP:
+           game.pressed[event.key] = False
+
+
+
+
+
+
+
+
+
+
+
+
+
